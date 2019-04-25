@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+   <head>
+     <title>Remittance</title>
+     <meta name="author" content="Paolo Bruzzone">
+     <meta charset="utf-8">
+     <link rel="stylesheet" type="text/css" href="./styles.css">
+   </head>
+
+   <body>
+     <h1>Remittance</h1>
+     <div><span id="blockNumber">Loading...</span> CurrentBlockNumber</div>
+     <div><span id="contractBalance">Loading...</span> ContractBalance</div>
+     <div><span id="maxDeltaBlocks">Loading...</span> MaxDeltaBlocks</div>
+     <div><span id="aliceBalance">Loading...</span> AliceBalance</div>
+     <div><span id="carolBalance">Loading...</span> CarolBalance</div>
+     <br>
+     <div>
+       <button id="showInfo">showInfo</button>.
+       <br>
+       <input name="secret1" type="text" placeholder="secret1" /> 
+       <input name="secret2" type="text" placeholder="secret2" /> 
+       <br>
+       <input name="amount" type="number" placeholder="amount" /> 
+       <input name="expDeltaBlock" type="number" placeholder="expDeltaBlock"/> 
+       <button id="sendFunds">SendFunds</button>.
+       <br>
+       <button id="claimAlice" >claim[Alice]</button>.
+       <button id="withdrawCarol">Withdraw[Carol]</button>.
+       <br>
+     </div>
+     <div><span id="status"></span> <- Last Operation Status</div>
+     <script src="js/app.js"></script>
+   </body>
+</html>
