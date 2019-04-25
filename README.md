@@ -35,7 +35,7 @@ make you, the owner of the contract, take a cut of the Ethers smaller than what 
 * did you degrade safety in the name of adding features?
 
 STATUS:
-* contract (two points in Stretch are not clear);
-* test
-* app JQUERY in PROGRESS
+* contract      OK
+* test		OK
+* app JQUERY    OK
 
