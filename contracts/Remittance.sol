@@ -6,6 +6,95 @@ import "./Pausable.sol";
 contract Remittance is Pausable {
     using SafeMath for uint256;
 
-    constructor()  public {
+    event LogRemittanceCreated(address indexed owner, uint256 indexed maxDeltaBlocks);
+    event LogRemittanceSendFunds(address indexed caller, address indexed exchange, uint256 indexed amount, uint256 expBlock);
+    event LogRemittanceWithdraw(address indexed caller, uint256 indexed amount);
+    event LogRemittanceClaim(address indexed caller, uint256 indexed amount);
+    
+    struct Payment {
+        address src;
+        address dest;
+        uint256 amount;
+        uint256 expBlock;
     }
+
+    uint256 public maxDeltaBlocks;
+    mapping(bytes32 => Payment) public payments;
+
+    constructor(uint256 _maxDeltaBlocks)  public {
+       require(_maxDeltaBlocks != 0, "_maxDeltaBlocks is zero");
+
+       maxDeltaBlocks = _maxDeltaBlocks;
+       emit LogRemittanceCreated(msg.sender, _maxDeltaBlocks);
+    }
+
+    /*
+    **  Possible hash compositions:
+    **   completeHash: 1) secret1+secret2
+    **   completeHash: 2) secret1+secret2+exchangeAddress
+    **   completeHash: 3) secret1+secret2+exchangeAddress+msg.sender
+    ** 
+    ** I have decided to use  option 1 with specific check internal
+    */
+    function sendFunds(bytes32 completeHash, address dest, uint256 deltaBlocks) public isWorking payable {
+       require(msg.value != 0, "sendFunds: msg.value is zero");
+       require(completeHash != 0, "sendFunds: completeHash is zero");
+       require(deltaBlocks > 0 && deltaBlocks <= maxDeltaBlocks , "sendFunds: deltaBlocks out of range");
+
+       // check if entry is empty or used by the same user
+       Payment storage myPayment = payments[completeHash];
+       require(myPayment.src == address(0) || myPayment.src == msg.sender  , "sendFunds: user uses wrong hash");
+	   
+       // even if new investiment arrives before withdraw increase balances and recalculates expBlock
+       uint256 amount = myPayment.amount.add(msg.value);
+       uint256 expBlock = deltaBlocks.add(block.number);
+
+       myPayment.src = msg.sender;
+       myPayment.dest = dest;
+       myPayment.amount = amount;
+       myPayment.expBlock = expBlock;
+       emit LogRemittanceSendFunds(msg.sender, dest, amount, expBlock);
+    }
+
+    function withdraw(bytes32 userHash, bytes32 exchangeHash) public isWorking {
+        require(userHash != 0, "withdraw: userHash is zero");
+        require(exchangeHash != 0, "withdraw: exchangeHash is zero");
+		
+        bytes32 completeHash = hash(userHash, exchangeHash);
+        Payment storage thePayment = payments[completeHash];
+
+        require(msg.sender == thePayment.dest, "withdraw: wrong account");
+        require(block.number <= thePayment.expBlock, "withdraw: end of block reached");
+        
+        uint256 amount = thePayment.amount;
+        require(amount > 0, "withdraw: payment amount is zero");
+        
+        thePayment.amount = 0;
+
+        emit LogRemittanceWithdraw(msg.sender, amount);
+
+        msg.sender.transfer(amount);
+    }
+
+   function claim(bytes32 completeHash) public isWorking {
+        require(completeHash != 0, "claim: completeHash is zero");
+
+        Payment storage myPayment = payments[completeHash];
+
+        require(msg.sender == myPayment.src, "claim: msg.sender is not src");
+        require(block.number > myPayment.expBlock, "claim: block.number is not greater than endBlock");
+        
+        uint256 amount = myPayment.amount;
+        require(amount > 0, "claim: payment amount is zero");
+
+        myPayment.amount = 0;
+
+        emit LogRemittanceClaim(msg.sender, amount);
+
+        msg.sender.transfer(amount);
+   }
+
+   function hash(bytes32 hash1, bytes32 hash2) public pure returns(bytes32 completeHash) {
+       return keccak256(abi.encodePacked(hash1, hash2));
+   }
 }
