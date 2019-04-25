@@ -6,8 +6,8 @@ import "./Ownable.sol";
  * @title Pausable
  */
 contract Pausable is Ownable {
-    event LogSplitterPaused(address indexed owner);
-    event LogSplitterResumed(address indexed owner);
+    event LogRemittancePaused(address indexed owner);
+    event LogRemittanceResumed(address indexed owner);
 
     bool private paused;
 
@@ -32,7 +32,7 @@ contract Pausable is Ownable {
     function pause() public isWorking onlyOwner {
         paused = true;
 
-        emit LogSplitterPaused(msg.sender);
+        emit LogRemittancePaused(msg.sender);
     }
 
     /**
@@ -41,6 +41,6 @@ contract Pausable is Ownable {
     function resume() public isSuspended onlyOwner {
         paused = false;
 
-        emit LogSplitterResumed(msg.sender);
+        emit LogRemittanceResumed(msg.sender);
     }
 }
