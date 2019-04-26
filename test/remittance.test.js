@@ -173,7 +173,7 @@ contract('Remittance', function(accounts) {
                     });
                 });
 
-                it(`allowed 2 sendFund()`, async function() {
+                it(`fail if same pwd is reused`, async function() {
                     const completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH)
                     .should.be.fulfilled;
 
@@ -181,18 +181,9 @@ contract('Remittance', function(accounts) {
                     await instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount1 })
                     .should.be.fulfilled;
 
-                    const amount2 = toWei('200', 'Gwei');
-                    await instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount2 })
-                    .should.be.fulfilled;
-
-                    // verifies the stored values
-                    let payment = await instance.payments(completeHash);
-                    assert.strictEqual(payment.src.toString(), user1.toString(), "beneficiary not stored correctly");
-                    assert.strictEqual(payment.dest.toString(), exchange.toString(), "exchange not stored correctly");
-                    let amount1BN = new BN(amount1) 
-                    let amount2BN = new BN(amount2) 
-                    let totalAmountsBN = amount1BN.add(amount2BN);
-                    assert.strictEqual(payment.amount.toString(), totalAmountsBN.toString(), "total amount is not calculate correctly");
+                    await web3.eth.expectedExceptionPromise(
+                      () => { return instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount1 }); },
+                      MAX_GAS);              
                 });
 
                 it("should fail if no ethers ",  async function() { 
