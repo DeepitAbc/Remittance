@@ -41,19 +41,17 @@ contract Remittance is Pausable {
        require(completeHash != 0, "sendFunds: completeHash is zero");
        require(deltaBlocks > 0 && deltaBlocks <= maxDeltaBlocks , "sendFunds: deltaBlocks out of range");
 
-       // check if entry is empty or used by the same user
+       // check if entry is empty; password can not be reused
        Payment storage myPayment = payments[completeHash];
-       require(myPayment.src == address(0) || myPayment.src == msg.sender  , "sendFunds: user uses wrong hash");
+       require(myPayment.src == address(0)  , "sendFunds: user uses wrong hash");
 	   
-       // even if new investiment arrives before withdraw increase balances and recalculates expBlock
-       uint256 amount = myPayment.amount.add(msg.value);
        uint256 expBlock = deltaBlocks.add(block.number);
 
        myPayment.src = msg.sender;
        myPayment.dest = dest;
-       myPayment.amount = amount;
+       myPayment.amount = msg.value;
        myPayment.expBlock = expBlock;
-       emit LogRemittanceSendFunds(msg.sender, dest, amount, expBlock);
+       emit LogRemittanceSendFunds(msg.sender, dest, msg.value, expBlock);
     }
 
     function withdraw(bytes32 userHash, bytes32 exchangeHash) public isWorking {
@@ -73,6 +71,7 @@ contract Remittance is Pausable {
 
         emit LogRemittanceWithdraw(msg.sender, amount);
 
+        // always transfer amount to registered account
         msg.sender.transfer(amount);
     }
 
