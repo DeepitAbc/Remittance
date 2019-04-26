@@ -81,15 +81,14 @@ window.addEventListener('load', async () => {
     async function showInfo() {
        try {
           const blockNumber = await window.web3.eth.getBlockNumber();
-          const maxDeltaBlocks = await instance.maxDeltaBlocks();
-          const contractBalance = await window.web3.eth.getBalance(instance.address);
-          const aliceBalance = await window.web3.eth.getBalance(aliceAccount);
-          const carolBalance = await window.web3.eth.getBalance(carolAccount);
-
-          console.log ("Contract Balance",contractBalance);
           console.log("blockNumber=", blockNumber.toString(10));
+          const maxDeltaBlocks = await instance.maxDeltaBlocks();
           console.log("maxDeltaBlocks=", maxDeltaBlocks.toString(10));
+          const contractBalance = await window.web3.eth.getBalance(instance.address);
+          console.log ("Contract Balance",contractBalance);
+          const aliceBalance = await window.web3.eth.getBalance(aliceAccount);
           console.log("Account[Alice]=", aliceAccount,aliceBalance.toString(10));
+          const carolBalance = await window.web3.eth.getBalance(carolAccount);
           console.log("Account[Carol]=", carolAccount,carolBalance.toString(10));
 
           $("#contractBalance").html(contractBalance.toString(10))
@@ -110,18 +109,16 @@ window.addEventListener('load', async () => {
 
        try {
            let amount = $("input[name='amount']").val();
-           let secret1 = $("input[name='secret1']").val();
-           let secret2 = $("input[name='secret2']").val();
+           let bobSecret = $("input[name='bobSecret']").val();
            let expDeltaBlock = $("input[name='expDeltaBlock']").val();
        
-           console.log ("secret1: ", secret1);
-           console.log ("secret2: ", secret2);
+           console.log ("bobSecret: ", bobSecret);
            console.log ("amount: ", amount);
            console.log ("expDeltaBlock: ", expDeltaBlock);
-           let completeHash = await instance.hash(sha3(secret1), sha3(secret2));
+           let completeHash = await instance.hash(sha3(bobSecret), carolAccount);
            console.log('completeHash:',completeHash);
 
-           let txObj = await instance.sendFunds(completeHash, carolAccount, expDeltaBlock,
+           let txObj = await instance.sendFunds(completeHash, expDeltaBlock,
                 { from: aliceAccount, gas: GAS, value: amount})
                 .on("transactionHash",
                     txHash => $("#status").html("Transaction on the way " + txHash))
@@ -151,12 +148,10 @@ window.addEventListener('load', async () => {
        const GAS = 300000; 
 
        try {
-           let secret1 = $("input[name='secret1']").val();
-           let secret2 = $("input[name='secret2']").val();
+           let bobSecret = $("input[name='bobSecret']").val();
        
-           console.log ("secret1: ", secret1);
-           console.log ("secret2: ", secret2);
-           let txObj = await instance.withdraw(sha3(secret1), sha3(secret2), { from: address, gas: GAS})
+           console.log ("bobSecret: ", bobSecret);
+           let txObj = await instance.withdraw(sha3(bobSecret), { from: address, gas: GAS})
                 .on("transactionHash",
                     txHash => $("#status").html("Transaction on the way " + txHash))
 
@@ -173,8 +168,9 @@ window.addEventListener('load', async () => {
            } else {
               console.log(receipt.logs[0]);
               $("#status").html("Transfer executed");
+           }
          }
-       }
+       
        catch(error) {
           $("#status").html("transaction error");
           console.log ("Error:",error);
@@ -185,12 +181,10 @@ window.addEventListener('load', async () => {
        const GAS = 300000; 
 
        try {
-           let secret1 = $("input[name='secret1']").val();
-           let secret2 = $("input[name='secret2']").val();
+           let bobSecret = $("input[name='bobSecret']").val();
        
-           console.log ("secret1: ", secret1);
-           console.log ("secret2: ", secret2);
-           let completeHash = await instance.hash(sha3(secret1), sha3(secret2));
+           console.log ("bobSecret: ", bobSecret);
+           let completeHash = await instance.hash(sha3(bobSecret), carolAccount);
            console.log('completeHash:',completeHash);
            let txObj = await instance.claim(completeHash, { from: aliceAccount, gas: GAS})
                 .on("transactionHash",
