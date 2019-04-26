@@ -7,7 +7,7 @@ contract Remittance is Pausable {
     using SafeMath for uint256;
 
     event LogRemittanceCreated(address indexed owner, uint256 indexed maxDeltaBlocks);
-    event LogRemittanceSendFunds(address indexed caller, address indexed exchange, uint256 indexed amount, uint256 expBlock);
+    event LogRemittanceSendFunds(address indexed caller, uint256 indexed amount, uint256 expBlock);
     event LogRemittanceWithdraw(address indexed caller, uint256 indexed amount);
     event LogRemittanceClaim(address indexed caller, uint256 indexed amount);
     
@@ -29,14 +29,9 @@ contract Remittance is Pausable {
     }
 
     /*
-    **  Possible hash compositions:
-    **   completeHash: 1) secret1+secret2
-    **   completeHash: 2) secret1+secret2+exchangeAddress
-    **   completeHash: 3) secret1+secret2+exchangeAddress+msg.sender
-    ** 
-    ** I have decided to use  option 1 with specific check internal
+    **   completeHash: bobSecret+CarolAddress
     */
-    function sendFunds(bytes32 completeHash, address dest, uint256 deltaBlocks) public isWorking payable {
+    function sendFunds(bytes32 completeHash, uint256 deltaBlocks) public isWorking payable {
        require(msg.value != 0, "sendFunds: msg.value is zero");
        require(completeHash != 0, "sendFunds: completeHash is zero");
        require(deltaBlocks > 0 && deltaBlocks <= maxDeltaBlocks , "sendFunds: deltaBlocks out of range");
@@ -48,20 +43,17 @@ contract Remittance is Pausable {
        uint256 expBlock = deltaBlocks.add(block.number);
 
        myPayment.src = msg.sender;
-       myPayment.dest = dest;
        myPayment.amount = msg.value;
        myPayment.expBlock = expBlock;
-       emit LogRemittanceSendFunds(msg.sender, dest, msg.value, expBlock);
+       emit LogRemittanceSendFunds(msg.sender, msg.value, expBlock);
     }
 
-    function withdraw(bytes32 userHash, bytes32 exchangeHash) public isWorking {
+    function withdraw(bytes32 userHash) public isWorking {
         require(userHash != 0, "withdraw: userHash is zero");
-        require(exchangeHash != 0, "withdraw: exchangeHash is zero");
 		
-        bytes32 completeHash = hash(userHash, exchangeHash);
+        bytes32 completeHash = hash(userHash, msg.sender);
         Payment storage thePayment = payments[completeHash];
 
-        require(msg.sender == thePayment.dest, "withdraw: wrong account");
         require(block.number <= thePayment.expBlock, "withdraw: end of block reached");
         
         uint256 amount = thePayment.amount;
@@ -93,7 +85,7 @@ contract Remittance is Pausable {
         msg.sender.transfer(amount);
    }
 
-   function hash(bytes32 hash1, bytes32 hash2) public pure returns(bytes32 completeHash) {
-       return keccak256(abi.encodePacked(hash1, hash2));
+   function hash(bytes32 hash1, address user) public pure returns(bytes32 completeHash) {
+       return keccak256(abi.encodePacked(hash1, user));
    }
 }
