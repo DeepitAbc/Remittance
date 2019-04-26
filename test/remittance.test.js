@@ -137,11 +137,11 @@ contract('Remittance', function(accounts) {
                     await instance.pause({ from: owner, gas: MAX_GAS})
                     .should.be.fulfilled;
 
-                    const completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH);
+                    const completeHash = await instance.hash(USER_HASH, exchange);
                     const amount = toWei('100', 'Gwei');
 
                     await web3.eth.expectedExceptionPromise(
-                      () => { return instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount }); },
+                      () => { return instance.sendFunds(completeHash, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount }); },
                       MAX_GAS);
                 });
 
@@ -158,90 +158,89 @@ contract('Remittance', function(accounts) {
                     const amount = validRecord.amount;
                     it(`allowed sendFund() ${amount} wei`, async function() {
 
-                        const completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH)
+                        const completeHash = await instance.hash(USER_HASH, exchange)
                         .should.be.fulfilled;
 
-                        await instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount })
+                        await instance.sendFunds(completeHash, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount })
                         .should.be.fulfilled;
    
                         // verifies the stored values
                         let payment = await instance.payments(completeHash);
                         assert.strictEqual(payment.src.toString(), user1.toString(), "beneficiary not stored correctly");
-                        assert.strictEqual(payment.dest.toString(), exchange.toString(), "exchange not stored correctly");
                         assert.strictEqual(payment.amount.toString(), amount.toString(), "amount not stored correctly");
                        
                     });
                 });
 
                 it(`fail if same pwd is reused`, async function() {
-                    const completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH)
+                    const completeHash = await instance.hash(USER_HASH, exchange)
                     .should.be.fulfilled;
 
                     const amount1 = toWei('100', 'Gwei');
-                    await instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount1 })
+                    await instance.sendFunds(completeHash, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount1 })
                     .should.be.fulfilled;
 
                     await web3.eth.expectedExceptionPromise(
-                      () => { return instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount1 }); },
+                      () => { return instance.sendFunds(completeHash, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount1 }); },
                       MAX_GAS);              
                 });
 
                 it("should fail if no ethers ",  async function() { 
-                    const completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH);
+                    const completeHash = await instance.hash(USER_HASH, exchange);
 
                     await web3.eth.expectedExceptionPromise(
-                      () => { return instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: 0 }); },
+                      () => { return instance.sendFunds(completeHash, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: 0 }); },
                       MAX_GAS);              
                    });
 
                 it("should fail if null hash ",  async function() { 
                     const amount = toWei('100', 'Gwei');
-                    const completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH);
+                    const completeHash = await instance.hash(USER_HASH, exchange);
 
                     await web3.eth.expectedExceptionPromise(
-                      () => { return instance.sendFunds(fromAscii(''), exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount}); },
+                      () => { return instance.sendFunds(fromAscii(''), DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount}); },
                       MAX_GAS);              
                 });
 
                 it("should fail if delta block is zero ",  async function() { 
                     const amount = toWei('100', 'Gwei');
-                    const completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH);
+                    const completeHash = await instance.hash(USER_HASH, exchange);
 
                     await web3.eth.expectedExceptionPromise(
-                      () => { return instance.sendFunds(completeHash, exchange, 0, { from: user1, gas: MAX_GAS, value: amount}); },
+                      () => { return instance.sendFunds(completeHash, 0, { from: user1, gas: MAX_GAS, value: amount}); },
                       MAX_GAS);              
                 });
 
 
                 it("should fail if delta block is greter MAX",  async function() { 
                     const amount = toWei('100', 'Gwei');
-                    const completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH);
+                    const completeHash = await instance.hash(USER_HASH, exchange);
 
                     await web3.eth.expectedExceptionPromise(
-                      () => { return instance.sendFunds(completeHash, exchange, MAX_BLOCK+1, { from: user1, gas: MAX_GAS, value: amount}); },
+                      () => { return instance.sendFunds(completeHash, MAX_BLOCK+1, { from: user1, gas: MAX_GAS, value: amount}); },
                       MAX_GAS);              
                 });
 
 
                 it("should fail if two user use same hash",  async function() { 
                     const amount = toWei('100', 'Gwei');
-                    const completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH);
+                    const completeHash = await instance.hash(USER_HASH, exchange);
 
-                    const result = await instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount })
+                    const result = await instance.sendFunds(completeHash, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount })
                     .should.be.fulfilled;      
 
-                    const completeHash1 = await instance.hash(USER_HASH, EXCHANGE_HASH);
+                    const completeHash1 = await instance.hash(USER_HASH, exchange);
           
                     await web3.eth.expectedExceptionPromise(
-                      () => { return instance.sendFunds(completeHash1, exchange, DELTA_BLOCK, { from: user2, gas: MAX_GAS, value: amount}); },
+                      () => { return instance.sendFunds(completeHash1, DELTA_BLOCK, { from: user2, gas: MAX_GAS, value: amount}); },
                       MAX_GAS);              
                 });
         
                 it("verify the emitted event",  async function() {
                     const amount = toWei('100', 'Gwei');
-                    const completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH);
+                    const completeHash = await instance.hash(USER_HASH, exchange);
 
-                    const result = await instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount })
+                    const result = await instance.sendFunds(completeHash, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount })
                     .should.be.fulfilled;      
          
                     assert.strictEqual(result.logs.length, 1);
@@ -254,7 +253,6 @@ contract('Remittance', function(accounts) {
         
                     assert.strictEqual(logEvent.event, "LogRemittanceSendFunds", "LogRemittanceSendFunds name is wrong");
                     assert.strictEqual(logEvent.args.caller, user1, "caller beneficiary is wrong");
-                    assert.strictEqual(logEvent.args.exchange, exchange, "first exchange is wrong");
                     assert.strictEqual(logEvent.args.amount.toString(), amount.toString(), "arg amount is wrong: " + logEvent.args.amount);
                     assert.strictEqual(logEvent.args.expBlock.toString(), expBlockBN.toString(), "arg expBlock is wrong: " + logEvent.args.expBlock.toString());
               });
@@ -266,8 +264,8 @@ contract('Remittance', function(accounts) {
                 beforeEach("should deploy Remittance and deposit funds instance",  async function() {
                     instance = await Remittance.new(MAX_BLOCK,{ from: owner , gas: MAX_GAS})
                     amount = toWei('10000', 'Gwei');
-                    const completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH);
-                    const result = await instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount });
+                    const completeHash = await instance.hash(USER_HASH, exchange);
+                    const result = await instance.sendFunds(completeHash, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount });
                 });
         
                 it("fail if contract is pause",  async function() {
@@ -275,21 +273,21 @@ contract('Remittance', function(accounts) {
                     .should.be.fulfilled;
           
                    await web3.eth.expectedExceptionPromise(
-                      () => { return instance.withdraw(USER_HASH, EXCHANGE_HASH, { from: exchange, gas: MAX_GAS}); },
+                      () => { return instance.withdraw(USER_HASH, { from: exchange, gas: MAX_GAS}); },
                       MAX_GAS);              
                });
       
                it("allowed withdraw",  async function() {        
-                   await instance.withdraw(USER_HASH, EXCHANGE_HASH, { from: exchange, gas: MAX_GAS}) 
+                   await instance.withdraw(USER_HASH, { from: exchange, gas: MAX_GAS}) 
                    .should.be.fulfilled;  
                });
 
                it("fail if already withdraw",  async function() {        
-                   await instance.withdraw(USER_HASH, EXCHANGE_HASH, { from: exchange, gas: MAX_GAS}) 
+                   await instance.withdraw(USER_HASH, { from: exchange, gas: MAX_GAS}) 
                    .should.be.fulfilled;  
           
                    await web3.eth.expectedExceptionPromise(
-                      () => { return instance.withdraw(USER_HASH, EXCHANGE_HASH, { from: exchange, gas: MAX_GAS}); },
+                      () => { return instance.withdraw(USER_HASH, { from: exchange, gas: MAX_GAS}); },
                       MAX_GAS);              
                });
                 
@@ -297,34 +295,28 @@ contract('Remittance', function(accounts) {
                    let instance2 = await Remittance.new(MAX_BLOCK,{ from: owner , gas: MAX_GAS})
           
                    await web3.eth.expectedExceptionPromise(
-                      () => { return instance2.withdraw(USER_HASH, EXCHANGE_HASH, { from: exchange, gas: MAX_GAS}); },
+                      () => { return instance2.withdraw(USER_HASH, { from: exchange, gas: MAX_GAS}); },
                       MAX_GAS);              
                });
                       
                it("fail if withdraw from other user ",  async function() {
                    await web3.eth.expectedExceptionPromise(
-                      () => { return instance.withdraw(USER_HASH, EXCHANGE_HASH, { from: user2, gas: MAX_GAS}); },
+                      () => { return instance.withdraw(USER_HASH, { from: user2, gas: MAX_GAS}); },
                       MAX_GAS);              
                });
 
                it("fail if USER_HASH is zero",  async function() {
                    await web3.eth.expectedExceptionPromise(
-                      () => { return instance.withdraw(fromAscii(''), EXCHANGE_HASH, { from: exchange, gas: MAX_GAS}); },
+                      () => { return instance.withdraw(fromAscii(''), { from: exchange, gas: MAX_GAS}); },
                       MAX_GAS);              
                });
         
-               it("fail if EXCHANGE_HASH is zero",  async function() {
-                   await web3.eth.expectedExceptionPromise(
-                      () => { return instance.withdraw(USER_HASH, fromAscii(''), { from: exchange, gas: MAX_GAS}); },
-                      MAX_GAS);              
-               });
-
                it("fail if withdraw after MAX_BLOCK",  async function() {
           
                   await jumpDeltaBlock(MAX_BLOCK+1);
           
                   await web3.eth.expectedExceptionPromise(
-                      () => { return instance.withdraw(USER_HASH, EXCHANGE_HASH, { from: exchange, gas: MAX_GAS}); },
+                      () => { return instance.withdraw(USER_HASH, { from: exchange, gas: MAX_GAS}); },
                       MAX_GAS);              
                });
       
@@ -335,7 +327,7 @@ contract('Remittance', function(accounts) {
                   let userBalancePre  = await web3.eth.getBalance(exchange);
                   const userBalancePreBN = new BN(userBalancePre);
         
-                  let result = await instance.withdraw(USER_HASH, EXCHANGE_HASH, { from: exchange, gas: MAX_GAS}) 
+                  let result = await instance.withdraw(USER_HASH, { from: exchange, gas: MAX_GAS}) 
                   .should.be.fulfilled;
            
                   // calculates transaction total gas
@@ -373,8 +365,8 @@ contract('Remittance', function(accounts) {
                 beforeEach("should deploy Remittance and deposit funds instance",  async function() {
                     instance = await Remittance.new(MAX_BLOCK,{ from: owner , gas: MAX_GAS})
                     amount = toWei('10000', 'Gwei');
-                    completeHash = await instance.hash(USER_HASH, EXCHANGE_HASH);
-                    const result = await instance.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount })
+                    completeHash = await instance.hash(USER_HASH, exchange);
+                    const result = await instance.sendFunds(completeHash, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount })
 
                     await jumpDeltaBlock(MAX_BLOCK+1)
                });
@@ -417,7 +409,7 @@ contract('Remittance', function(accounts) {
               it("fail if no deposit",  async function() {
                   let instance2 = await Remittance.new(MAX_BLOCK,{ from: owner , gas: MAX_GAS})
 
-                  let completeHash1 = await instance.hash(USER_HASH, EXCHANGE_HASH);
+                  let completeHash1 = await instance.hash(USER_HASH, exchange);
           
                   await web3.eth.expectedExceptionPromise(
                       () => { return instance2.claim(completeHash1, { from: user1, gas: MAX_GAS}); },
@@ -428,9 +420,9 @@ contract('Remittance', function(accounts) {
                   let instance2 = await Remittance.new(MAX_BLOCK,{ from: owner , gas: MAX_GAS})
 
                   const amount = toWei('10000', 'Gwei');
-                  let completeHash = await instance2.hash(USER_HASH, EXCHANGE_HASH);
+                  let completeHash = await instance2.hash(USER_HASH, exchange);
 
-                  const result = await instance2.sendFunds(completeHash, exchange, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount })
+                  const result = await instance2.sendFunds(completeHash, DELTA_BLOCK, { from: user1, gas: MAX_GAS, value: amount })
                   .should.be.fulfilled;    
           
                   await web3.eth.expectedExceptionPromise(
