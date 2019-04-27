@@ -44,8 +44,10 @@ contract('Remittance', function(accounts) {
               let instance = await Remittance.new(MAX_BLOCK,{ from: owner , gas: MAX_GAS})
 
               const receipt = await web3.eth.getTransactionReceiptMined(instance.transactionHash);
-              receipt.logs.length.should.be.equal(1);
-              const logEventCreated = receipt.logs[0];
+              receipt.logs.length.should.be.equal(2);
+              let logEventCreated = receipt.logs[0];
+              logEventCreated.topics[0].should.be.equal(sha3('PauserAdded(address)'));
+              logEventCreated = receipt.logs[1];
               logEventCreated.topics[0].should.be.equal(sha3('LogRemittanceCreated(address,uint256)'));
            });
        });
@@ -91,8 +93,8 @@ contract('Remittance', function(accounts) {
                     assert.strictEqual(result.logs.length, 1);
                     let logEvent = result.logs[0];
 
-                    assert.strictEqual(logEvent.event, "LogRemittancePaused", "LogRemittancePaused name is wrong");
-                    assert.strictEqual(logEvent.args.owner, owner, "caller is wrong");
+                    assert.strictEqual(logEvent.event, "Paused", "Paused name is wrong");
+                    assert.strictEqual(logEvent.args.account, owner, "caller is wrong");
                 });
             });
 
@@ -100,35 +102,32 @@ contract('Remittance', function(accounts) {
                 it("is OK if called by owner", async function() {
                     await instance.pause({ from: owner, gas: MAX_GAS})
                     .should.be.fulfilled;
-                    await instance.resume({ from: owner, gas: MAX_GAS})
+                    await instance.unpause({ from: owner, gas: MAX_GAS})
                     .should.be.fulfilled;
                 });
 
                 it("should fail if called by any user", async function() {
-                    await instance.pause({ from: owner, gas: MAX_GAS})
-                    .should.be.fulfilled;
-
                     await web3.eth.expectedExceptionPromise(
-                      () => { return instance.resume({ from: user1, gas: MAX_GAS }); }, 
+                      () => { return instance.unpause({ from: user1, gas: MAX_GAS }); }, 
                       MAX_GAS);
                 });
 
                 it("should fail if !paused ", async function() {
                     await web3.eth.expectedExceptionPromise(
-                      () => { return instance.resume({ from: owner, gas: MAX_GAS }); },
+                      () => { return instance.unpause({ from: owner, gas: MAX_GAS }); },
                       MAX_GAS);
                 });
 
                 it("emit event", async function() {
                     await instance.pause({ from: owner, gas: MAX_GAS})
                     .should.be.fulfilled;
-                    let result = await instance.resume({ from: owner, gas: MAX_GAS})
+                    let result = await instance.unpause({ from: owner, gas: MAX_GAS})
                     .should.be.fulfilled;
                     assert.strictEqual(result.logs.length, 1);
                     let logEvent = result.logs[0];
 
-                    assert.strictEqual(logEvent.event, "LogRemittanceResumed", "LogRemittanceResumed name is wrong");
-                    assert.strictEqual(logEvent.args.owner, owner, "caller is wrong");
+                    assert.strictEqual(logEvent.event, "Unpaused", "Unpaused name is wrong");
+                    assert.strictEqual(logEvent.args.account, owner, "caller is wrong");
                 });
             });
 
