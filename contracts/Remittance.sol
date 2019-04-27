@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./Pausable.sol";
+import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
 contract Remittance is Pausable {
     using SafeMath for uint256;
@@ -20,6 +20,7 @@ contract Remittance is Pausable {
 
     uint256 public maxDeltaBlocks;
     mapping(bytes32 => Payment) public payments;
+    mapping(bytes32 => bool) passwordConsumed;
 
     constructor(uint256 _maxDeltaBlocks)  public {
        require(_maxDeltaBlocks != 0, "_maxDeltaBlocks is zero");
@@ -31,7 +32,7 @@ contract Remittance is Pausable {
     /*
     **   completeHash: bobSecret+CarolAddress
     */
-    function sendFunds(bytes32 completeHash, uint256 deltaBlocks) public isWorking payable {
+    function sendFunds(bytes32 completeHash, uint256 deltaBlocks) public whenNotPaused payable {
        require(msg.value != 0, "sendFunds: msg.value is zero");
        require(completeHash != 0, "sendFunds: completeHash is zero");
        require(deltaBlocks > 0 && deltaBlocks <= maxDeltaBlocks , "sendFunds: deltaBlocks out of range");
@@ -48,7 +49,7 @@ contract Remittance is Pausable {
        emit LogRemittanceSendFunds(msg.sender, msg.value, expBlock);
     }
 
-    function withdraw(bytes32 userHash) public isWorking {
+    function withdraw(bytes32 userHash) public whenNotPaused {
         require(userHash != 0, "withdraw: userHash is zero");
 		
         bytes32 completeHash = hash(userHash, msg.sender);
@@ -67,7 +68,7 @@ contract Remittance is Pausable {
         msg.sender.transfer(amount);
     }
 
-   function claim(bytes32 completeHash) public isWorking {
+   function claim(bytes32 completeHash) public whenNotPaused {
         require(completeHash != 0, "claim: completeHash is zero");
 
         Payment storage myPayment = payments[completeHash];
@@ -85,7 +86,7 @@ contract Remittance is Pausable {
         msg.sender.transfer(amount);
    }
 
-   function hash(bytes32 hash1, address user) public pure returns(bytes32 completeHash) {
-       return keccak256(abi.encodePacked(hash1, user));
+   function hash(bytes32 hash1, address account) public view returns(bytes32 completeHash) {
+       return keccak256(abi.encodePacked(this, hash1, account));
    }
 }
