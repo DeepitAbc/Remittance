@@ -1,8 +1,5 @@
 "use strict"; 
 
-// Import the third-party libraries
-const Promise = require("bluebird");
-
 web3.eth.expectedExceptionPromise   = require("../utils/expectedExceptionPromise.js");
 web3.eth.getEventsPromise           = require("../utils/getEventsPromise.js");
 web3.eth.getFirstAccountPromise     = require("../utils/getFirstAccountPromise.js");
