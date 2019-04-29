@@ -13,14 +13,12 @@ contract Remittance is Pausable {
     
     struct Payment {
         address src;
-        address dest;
         uint256 amount;
         uint256 expBlock;
     }
 
     uint256 public maxDeltaBlocks;
     mapping(bytes32 => Payment) public payments;
-    mapping(bytes32 => bool) passwordConsumed;
 
     constructor(uint256 _maxDeltaBlocks)  public {
        require(_maxDeltaBlocks != 0, "_maxDeltaBlocks is zero");
@@ -49,10 +47,10 @@ contract Remittance is Pausable {
        emit LogRemittanceSendFunds(msg.sender, msg.value, expBlock);
     }
 
-    function withdraw(bytes32 userHash) public whenNotPaused {
-        require(userHash != 0, "withdraw: userHash is zero");
+    function withdraw(bytes32 password) public whenNotPaused {
+        require(password != 0, "withdraw: password is zero");
 		
-        bytes32 completeHash = hash(userHash, msg.sender);
+        bytes32 completeHash = hash(password, msg.sender);
         Payment storage thePayment = payments[completeHash];
 
         require(block.number <= thePayment.expBlock, "withdraw: end of block reached");
@@ -61,10 +59,10 @@ contract Remittance is Pausable {
         require(amount > 0, "withdraw: payment amount is zero");
         
         thePayment.amount = 0;
+        thePayment.expBlock = 0;
 
         emit LogRemittanceWithdraw(msg.sender, amount);
 
-        // always transfer amount to registered account
         msg.sender.transfer(amount);
     }
 
@@ -80,6 +78,7 @@ contract Remittance is Pausable {
         require(amount > 0, "claim: payment amount is zero");
 
         myPayment.amount = 0;
+        myPayment.expBlock = 0;
 
         emit LogRemittanceClaim(msg.sender, amount);
 
