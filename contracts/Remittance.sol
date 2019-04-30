@@ -7,9 +7,9 @@ contract Remittance is Pausable {
     using SafeMath for uint256;
 
     event LogRemittanceCreated(address indexed owner, uint256 indexed maxDeltaBlocks);
-    event LogRemittanceSendFunds(address indexed caller, uint256 indexed amount, uint256 expBlock);
-    event LogRemittanceWithdraw(address indexed caller, uint256 indexed amount);
-    event LogRemittanceClaim(address indexed caller, uint256 indexed amount);
+    event LogRemittanceSendFunds(address indexed caller, uint256 indexed amount, uint256 expBlock, bytes32 hash);
+    event LogRemittanceWithdraw(address indexed caller, uint256 indexed amount, bytes32 hash);
+    event LogRemittanceClaim(address indexed caller, uint256 indexed amount, bytes32 hash);
     
     struct Payment {
         address src;
@@ -44,7 +44,7 @@ contract Remittance is Pausable {
        myPayment.src = msg.sender;
        myPayment.amount = msg.value;
        myPayment.expBlock = expBlock;
-       emit LogRemittanceSendFunds(msg.sender, msg.value, expBlock);
+       emit LogRemittanceSendFunds(msg.sender, msg.value, expBlock, completeHash);
     }
 
     function withdraw(bytes32 password) public whenNotPaused {
@@ -61,7 +61,7 @@ contract Remittance is Pausable {
         thePayment.amount = 0;
         thePayment.expBlock = 0;
 
-        emit LogRemittanceWithdraw(msg.sender, amount);
+        emit LogRemittanceWithdraw(msg.sender, amount, completeHash);
 
         msg.sender.transfer(amount);
     }
@@ -80,7 +80,7 @@ contract Remittance is Pausable {
         myPayment.amount = 0;
         myPayment.expBlock = 0;
 
-        emit LogRemittanceClaim(msg.sender, amount);
+        emit LogRemittanceClaim(msg.sender, amount, completeHash);
 
         msg.sender.transfer(amount);
    }
