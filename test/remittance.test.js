@@ -95,7 +95,7 @@ contract('Remittance', function(accounts) {
                 });
             });
 
-            describe("#resume()", async function() {
+            describe("#unpause()", async function() {
                 it("is OK if called by owner", async function() {
                     await instance.pause({ from: owner, gas: MAX_GAS})
                     .should.be.fulfilled;
@@ -207,7 +207,6 @@ contract('Remittance', function(accounts) {
                       MAX_GAS);              
                 });
 
-
                 it("should fail if delta block is greter MAX",  async function() { 
                     const amount = toWei('100', 'Gwei');
                     const completeHash = await instance.hash(USER_HASH, exchange);
@@ -216,7 +215,6 @@ contract('Remittance', function(accounts) {
                       () => { return instance.sendFunds(completeHash, MAX_BLOCK+1, { from: user1, gas: MAX_GAS, value: amount}); },
                       MAX_GAS);              
                 });
-
 
                 it("should fail if two user use same hash",  async function() { 
                     const amount = toWei('100', 'Gwei');
@@ -248,9 +246,11 @@ contract('Remittance', function(accounts) {
                     expBlockBN = expBlockBN.add(deltaBlockBN);
         
                     assert.strictEqual(logEvent.event, "LogRemittanceSendFunds", "LogRemittanceSendFunds name is wrong");
+                    assert.strictEqual(logEvent.args.__length__, 4, "wrogs log args: ",logEvent.args.__length__);
                     assert.strictEqual(logEvent.args.caller, user1, "caller beneficiary is wrong");
                     assert.strictEqual(logEvent.args.amount.toString(), amount.toString(), "arg amount is wrong: " + logEvent.args.amount);
                     assert.strictEqual(logEvent.args.expBlock.toString(), expBlockBN.toString(), "arg expBlock is wrong: " + logEvent.args.expBlock.toString());
+                    assert.strictEqual(logEvent.args.hash.toString(), completeHash.toString(), "arg hash is wrong: " + logEvent.args.hash.toString());
               });
             });
 
@@ -349,9 +349,12 @@ contract('Remittance', function(accounts) {
 
                   assert.strictEqual(expectedUserBalance.toString(), userBalancePostBN.toString(), "user balances are not correct");
                   let logEvent = result.logs[0];
+                  const  expHash = await instance.hash(USER_HASH, exchange);
+                  assert.strictEqual(logEvent.args.__length__, 3, "wrogs log args: ",logEvent.args.__length__);
                   assert.strictEqual(logEvent.event, "LogRemittanceWithdraw", "LogRemittanceWithdraw name is wrong");
                   assert.strictEqual(logEvent.args.caller, exchange, "caller beneficiary is wrong");
                   assert.strictEqual(logEvent.args.amount.toString(), amount.toString(), "arg amount is wrong: " + logEvent.args.amount);
+                  assert.strictEqual(logEvent.args.hash.toString(), expHash.toString(), "arg hash is wrong: " + logEvent.args.hash);
               });
             });
     
@@ -458,9 +461,11 @@ contract('Remittance', function(accounts) {
                   assert.strictEqual(expectedUserBalance.toString(), userBalancePostBN.toString(), "user balances are not correct");
            
                   let logEvent = result.logs[0];
+                  assert.strictEqual(logEvent.args.__length__, 3, "wrogs log args: ",logEvent.args.__length__);
                   assert.strictEqual(logEvent.event, "LogRemittanceClaim", "LogRemittanceClaim name is wrong");
                   assert.strictEqual(logEvent.args.caller, user1, "caller beneficiary is wrong");
                   assert.strictEqual(logEvent.args.amount.toString(), amount.toString(), "arg amount is wrong: " + logEvent.args.amount);
+                  assert.strictEqual(logEvent.args.hash.toString(), completeHash.toString(), "arg hash is wrong: " + logEvent.args.hash);
               });
           });
        });
